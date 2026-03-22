@@ -245,35 +245,35 @@ export default function StockDashboard({ initialData }: { initialData: ArticleDa
 
       {/* Main Table Content */}
       <div className="overflow-x-auto custom-scrollbar relative">
-        <table className="w-full text-xs text-left border-collapse min-w-max">
-          <thead className="text-[10px] md:text-xs text-slate-700 uppercase bg-slate-100 border-b-2 border-slate-300 shadow-sm sticky top-0 z-0 leading-tight">
+        <table className="w-full text-sm text-left border-collapse min-w-[1200px]">
+          <thead className="text-xs text-slate-700 uppercase bg-slate-100 border-b-2 border-slate-300 shadow-sm sticky top-0 z-0">
             <tr>
-              <th rowSpan={2} className="px-2 py-2 border-r border-slate-200 min-w-[200px] w-[250px]">Artículo</th>
-              <th colSpan={4} className="px-1 py-1 border-r border-slate-200 text-center bg-slate-50 text-slate-600 font-bold">Stock Físico<br/><span className="opacity-80">(S.F)</span></th>
-              <th colSpan={4} className="px-1 py-1 border-r border-slate-200 text-center bg-red-50 text-red-600 font-bold border-b border-red-100 shadow-inner text-shadow-sm">Pendiente Remitir<br/><span className="opacity-80">(P.Rem)</span></th>
-              <th rowSpan={2} className="px-2 py-2 border-r border-slate-200 text-center w-[85px] bg-blue-50 text-blue-700 cursor-help" title="Mercadería comprada aún sin ingresar al sistema físico.">Pend.<br/>Recibir<br/><span className="font-normal opacity-75">(P.Rec)</span></th>
-              <th colSpan={4} className="px-1 py-1 border-r border-slate-200 text-center bg-emerald-50 text-emerald-700 font-bold">Saldo Comercial<br/><span className="font-normal opacity-80">(S.F - P.Rem)</span></th>
-              <th rowSpan={2} className="px-2 py-2 border-r border-slate-200 text-center w-[75px] bg-slate-800 text-white shadow font-bold text-shadow">S.C<br/>FINAL<br/><span className="text-[9px] text-slate-300 font-normal leading-[1]">(S.C+P.Rec)</span></th>
-              <th rowSpan={2} className="px-2 py-2 border-l-2 border-slate-300 text-center w-[160px] max-w-[180px] shadow-sm">Acción Sugerida</th>
+              <th rowSpan={2} className="px-4 py-3 border-r border-slate-200 w-[350px]">Artículo</th>
+              <th colSpan={4} className="px-4 py-2 border-r border-slate-200 text-center bg-slate-50 text-slate-600">Stock Físico (S.F)</th>
+              <th colSpan={4} className="px-4 py-2 border-r border-slate-200 text-center bg-red-50 text-red-600 font-bold border-b border-red-100 shadow-inner text-shadow-sm">Pendiente Remitir (P.Rem)</th>
+              <th rowSpan={2} className="px-4 py-3 border-r border-slate-200 text-center w-32 bg-blue-50 text-blue-700 cursor-help" title="Mercadería comprada aún sin ingresar al sistema físico.">Pend. Recibir<br/><span className="text-[10px] font-normal opacity-75">(P.Rec)</span></th>
+              <th colSpan={4} className="px-4 py-2 border-r border-slate-200 text-center bg-emerald-50 text-emerald-700 font-bold">Saldo Comercial Parcial (S.C) <br/><span className="text-[10px] font-normal opacity-80">(S.F - P.Rem)</span></th>
+              <th rowSpan={2} className="px-4 py-3 border-r border-slate-200 text-center min-w-24 bg-slate-800 text-white shadow font-bold text-shadow">S.C FINAL<br/><span className="text-[10px] text-slate-300 font-normal leading-tight">(S.C + P.Rec)</span></th>
+              <th rowSpan={2} className="px-6 py-3 border-l-2 border-slate-300 text-center w-[200px] shadow-sm">Acción Sugerida</th>
             </tr>
             <tr>
                {/* Stock */}
-               <th className="px-1 py-1.5 border-r border-slate-200 bg-slate-50 text-center font-medium">Carh</th>
-               <th className="px-1 py-1.5 border-r border-slate-200 bg-slate-50 text-center font-medium">Pigüé</th>
-               <th className="px-1 py-1.5 border-r border-slate-200 bg-slate-50 text-center font-medium">Maza</th>
-               <th className="px-1 py-1.5 border-r border-slate-200 font-bold text-slate-800 text-center shadow-inner">Tot</th>
+               <th className="px-2 py-2 border-r border-slate-200 bg-slate-50 text-center font-medium">Carh</th>
+               <th className="px-2 py-2 border-r border-slate-200 bg-slate-50 text-center font-medium">Pigüé</th>
+               <th className="px-2 py-2 border-r border-slate-200 bg-slate-50 text-center font-medium">Maza</th>
+               <th className="px-2 py-2 border-r border-slate-200 font-bold text-slate-800 text-center shadow-inner">Total</th>
                
                {/* Pend. Remit */}
-               <th className="px-1 py-1.5 border-r border-slate-200 bg-red-50/50 text-center text-red-600/80">Carh</th>
-               <th className="px-1 py-1.5 border-r border-slate-200 bg-red-50/50 text-center text-red-600/80">Pigüé</th>
-               <th className="px-1 py-1.5 border-r border-slate-200 bg-red-50/50 text-center text-red-600/80">Maza</th>
-               <th className="px-1 py-1.5 border-r border-slate-200 font-bold text-red-700 bg-red-50/80 text-center shadow-inner">Tot</th>
+               <th className="px-2 py-2 border-r border-slate-200 bg-red-50/50 text-center text-red-600/80">Carh</th>
+               <th className="px-2 py-2 border-r border-slate-200 bg-red-50/50 text-center text-red-600/80">Pigüé</th>
+               <th className="px-2 py-2 border-r border-slate-200 bg-red-50/50 text-center text-red-600/80">Maza</th>
+               <th className="px-2 py-2 border-r border-slate-200 font-bold text-red-700 bg-red-50/80 text-center shadow-inner">Tot</th>
                
                {/* SC Parcial */}
-               <th className="px-1 py-1.5 border-r border-slate-200 bg-emerald-50/50 text-center text-emerald-700/80">Carh</th>
-               <th className="px-1 py-1.5 border-r border-slate-200 bg-emerald-50/50 text-center text-emerald-700/80">Pigüé</th>
-               <th className="px-1 py-1.5 border-r border-slate-200 bg-emerald-50/50 text-center text-emerald-700/80">Maza</th>
-               <th className="px-1 py-1.5 border-r border-slate-200 font-bold text-emerald-800 bg-emerald-50/80 text-center shadow-inner">Tot</th>
+               <th className="px-2 py-2 border-r border-slate-200 bg-emerald-50/50 text-center text-emerald-700/80">Carh</th>
+               <th className="px-2 py-2 border-r border-slate-200 bg-emerald-50/50 text-center text-emerald-700/80">Pigüé</th>
+               <th className="px-2 py-2 border-r border-slate-200 bg-emerald-50/50 text-center text-emerald-700/80">Maza</th>
+               <th className="px-2 py-2 border-r border-slate-200 font-bold text-emerald-800 bg-emerald-50/80 text-center shadow-inner">Tot</th>
             </tr>
           </thead>
           <tbody>
@@ -289,10 +289,10 @@ export default function StockDashboard({ initialData }: { initialData: ArticleDa
               <React.Fragment key={gIdx}>
                 {/* Rubro Header */}
                 <tr className="bg-slate-200/70 border-y border-slate-300">
-                  <td colSpan={15} className="px-3 py-2 font-bold text-slate-800 tracking-wide uppercase flex items-center gap-2">
-                    <div className="w-1.5 h-3 bg-[#c39a2f] rounded-full"></div>
+                  <td colSpan={15} className="px-5 py-2.5 font-bold text-slate-800 tracking-wide uppercase flex items-center gap-2">
+                    <div className="w-1.5 h-4 bg-[#c39a2f] rounded-full"></div>
                     {group.rubroName}
-                    <span className="text-[10px] text-slate-500 font-semibold lowercase tracking-normal ml-2">({group.items.length} artículos)</span>
+                    <span className="text-xs text-slate-500 font-semibold lowercase tracking-normal ml-2">({group.items.length} artículos)</span>
                   </td>
                 </tr>
                 
@@ -309,49 +309,49 @@ export default function StockDashboard({ initialData }: { initialData: ArticleDa
 
                   return (
                     <tr key={item.id} className="border-b border-slate-100 hover:bg-slate-50/80 transition-colors group">
-                      <td className="px-2 py-2 font-semibold text-slate-800 border-r border-slate-100 truncate max-w-[250px]" title={item.nombre}>{item.nombre}</td>
+                      <td className="px-4 py-3 font-medium text-slate-800 border-r border-slate-100 truncate max-w-[350px]" title={item.nombre}>{item.nombre}</td>
                       
                       {/* Stock */}
-                      <td className="px-1 py-2 text-center border-r border-slate-100 text-slate-600">{item.stock.carhue}</td>
-                      <td className="px-1 py-2 text-center border-r border-slate-100 text-slate-600">{item.stock.pigue}</td>
-                      <td className="px-1 py-2 text-center border-r border-slate-100 text-slate-600">{item.stock.maza}</td>
-                      <td className="px-1 py-2 text-center border-r border-slate-200 font-bold bg-slate-50/50 text-slate-700">{item.stock.total}</td>
+                      <td className="px-2 py-3 text-center border-r border-slate-100 text-slate-600">{item.stock.carhue}</td>
+                      <td className="px-2 py-3 text-center border-r border-slate-100 text-slate-600">{item.stock.pigue}</td>
+                      <td className="px-2 py-3 text-center border-r border-slate-100 text-slate-600">{item.stock.maza}</td>
+                      <td className="px-2 py-3 text-center border-r border-slate-200 font-bold bg-slate-50/50 text-slate-700">{item.stock.total}</td>
                       
                       {/* Pend Remit */}
-                      <td className="px-1 py-2 text-center border-r border-slate-100 text-red-500/90">{item.pend_remitir.carhue}</td>
-                      <td className="px-1 py-2 text-center border-r border-slate-100 text-red-500/90">{item.pend_remitir.pigue}</td>
-                      <td className="px-1 py-2 text-center border-r border-slate-100 text-red-500/90">{item.pend_remitir.maza}</td>
-                      <td className="px-1 py-2 text-center border-r border-slate-200 font-bold bg-red-50/30 text-red-600">{item.pend_remitir.total}</td>
+                      <td className="px-2 py-3 text-center border-r border-slate-100 text-red-400">{item.pend_remitir.carhue}</td>
+                      <td className="px-2 py-3 text-center border-r border-slate-100 text-red-400">{item.pend_remitir.pigue}</td>
+                      <td className="px-2 py-3 text-center border-r border-slate-100 text-red-400">{item.pend_remitir.maza}</td>
+                      <td className="px-2 py-3 text-center border-r border-slate-200 font-bold bg-red-50/30 text-red-500">{item.pend_remitir.total}</td>
                       
                       {/* Pend. Recibir Editable */}
-                      <td className="px-2 py-1.5 border-r border-slate-200 bg-blue-50/30">
+                      <td className="px-3 py-2 border-r border-slate-200 bg-blue-50/30">
                         <input 
                           type="number" 
                           min="0"
                           value={pendRecibir[item.id] !== undefined ? pendRecibir[item.id] : ''}
                           placeholder="0"
                           onChange={e => handleRecibirChange(item.id, e.target.value)}
-                          className="w-full text-center py-1 px-1 bg-white border border-blue-200 rounded text-blue-700 font-bold focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all shadow-inner hover:border-blue-300"
+                          className="w-full text-center py-1.5 px-2 bg-white border border-blue-200 rounded text-blue-700 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all shadow-inner hover:border-blue-300"
                         />
                       </td>
 
                       {/* SC Parcial */}
-                      <td className={`px-1 py-2 text-center border-r border-slate-100 font-semibold ${scCarhue < 0 ? 'bg-orange-100/80 text-orange-700' : 'text-emerald-700/80'}`}>{scCarhue}</td>
-                      <td className={`px-1 py-2 text-center border-r border-slate-100 font-semibold ${scPigue < 0 ? 'bg-orange-100/80 text-orange-700' : 'text-emerald-700/80'}`}>{scPigue}</td>
-                      <td className={`px-1 py-2 text-center border-r border-slate-100 font-semibold ${scMaza < 0 ? 'bg-orange-100/80 text-orange-700' : 'text-emerald-700/80'}`}>{scMaza}</td>
-                      <td className={`px-1 py-2 text-center border-r border-slate-200 font-bold ${scTotal < 0 ? 'bg-red-100/80 text-red-700' : 'bg-emerald-50/50 text-emerald-700'}`}>{scTotal}</td>
+                      <td className={`px-2 py-3 text-center border-r border-slate-100 font-medium ${scCarhue < 0 ? 'bg-orange-100/80 text-orange-700' : 'text-emerald-600'}`}>{scCarhue}</td>
+                      <td className={`px-2 py-3 text-center border-r border-slate-100 font-medium ${scPigue < 0 ? 'bg-orange-100/80 text-orange-700' : 'text-emerald-600'}`}>{scPigue}</td>
+                      <td className={`px-2 py-3 text-center border-r border-slate-100 font-medium ${scMaza < 0 ? 'bg-orange-100/80 text-orange-700' : 'text-emerald-600'}`}>{scMaza}</td>
+                      <td className={`px-2 py-3 text-center border-r border-slate-200 font-bold ${scTotal < 0 ? 'bg-red-100/80 text-red-700' : 'bg-emerald-50/50 text-emerald-700'}`}>{scTotal}</td>
 
                       {/* SC FINAL */}
-                      <td className={`px-1 py-2 text-center border-r border-slate-200 font-extrabold text-sm ${scFinal < 0 ? 'bg-red-500 text-white shadow-inner' : 'bg-slate-700 text-white shadow-inner'}`}>
+                      <td className={`px-2 py-3 text-center border-r border-slate-200 font-extrabold text-base ${scFinal < 0 ? 'bg-red-500 text-white shadow-inner' : 'bg-slate-700 text-white shadow-inner'}`}>
                         {scFinal}
                       </td>
 
                       {/* Action */}
-                      <td className="px-2 py-1.5 border-l-2 border-slate-200">
-                        <div className={`px-2 py-1.5 rounded border text-[10px] md:text-xs font-bold flex flex-col items-center justify-center text-center shadow-sm h-full w-full ${action.color}`}>
+                      <td className="px-2 py-2 border-l-2 border-slate-200">
+                        <div className={`px-3 py-1.5 rounded-md border text-xs font-bold flex flex-col items-center justify-center text-center shadow-sm h-full w-full ${action.color}`}>
                           <span>{action.status}</span>
                           {action.warning && action.status !== 'OK' && (
-                            <span className="mt-1 text-[9px] font-medium opacity-90 leading-tight border-t border-current/20 pt-1 w-full" title={action.warning}>
+                            <span className="mt-1 text-[10px] font-medium opacity-90 leading-tight border-t border-current/20 pt-1 w-full" title={action.warning}>
                               {action.warning}
                             </span>
                           )}
