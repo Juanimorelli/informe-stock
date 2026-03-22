@@ -70,7 +70,7 @@ export default function StockDashboard({ initialData }: { initialData: ArticleDa
 
     if (scFinalTotal < 0) {
       return { 
-        status: 'COMPRAR INSUMOS', 
+        status: 'COMPRAR', 
         color: 'bg-red-100 text-red-700 border-red-200', 
         warning: `Faltan ${Math.abs(scFinalTotal)} un. en total.` 
       };
@@ -253,9 +253,9 @@ export default function StockDashboard({ initialData }: { initialData: ArticleDa
               <th rowSpan={2} className="px-2 py-2 border-r border-slate-200 w-[220px]">Artículo</th>
               <th colSpan={4} className="px-1 py-1 border-r border-slate-200 text-center bg-slate-50 text-slate-600 font-bold">Stock Físico<br/><span className="opacity-80">(S.F)</span></th>
               <th colSpan={4} className="px-1 py-1 border-r border-slate-200 text-center bg-red-50 text-red-600 font-bold border-b border-red-100 shadow-inner text-shadow-sm">Pendiente Remitir<br/><span className="opacity-80">(P.Rem)</span></th>
-              <th rowSpan={2} className="px-1 py-2 border-r border-slate-200 text-center w-[64px] bg-blue-50 text-blue-700 cursor-help" title="Mercadería comprada aún sin ingresar al sistema físico.">Pend.<br/>Recibir<br/><span className="font-normal opacity-75">(P.Rec)</span></th>
+              <th rowSpan={2} className="px-1 py-2 border-r border-slate-200 text-center w-[74px] bg-blue-50 text-blue-700 cursor-help" title="Mercadería comprada aún sin ingresar al sistema físico.">Pend.<br/>Recibir<br/><span className="font-normal opacity-75">(P.Rec)</span></th>
               <th colSpan={4} className="px-1 py-1 border-r border-slate-200 text-center bg-emerald-50 text-emerald-700 font-bold">Saldo Comercial<br/><span className="font-normal opacity-80">(S.F - P.Rem)</span></th>
-              <th rowSpan={2} className="px-1 py-2 border-r border-slate-200 text-center w-[64px] bg-slate-800 text-white shadow font-bold text-shadow">S.C<br/>FINAL<br/><span className="text-[9px] text-slate-300 font-normal leading-[1]">(S.C+P.Rec)</span></th>
+              <th rowSpan={2} className="px-1 py-2 border-r border-slate-200 text-center w-[74px] bg-slate-800 text-white shadow font-bold text-shadow">S.C<br/>FINAL<br/><span className="text-[9px] text-slate-300 font-normal leading-[1]">(S.C+P.Rec)</span></th>
               <th rowSpan={2} className="px-2 py-2 border-l-2 border-slate-300 text-center w-[110px] shadow-sm">Acción Sugerida</th>
             </tr>
             <tr>
@@ -338,7 +338,7 @@ export default function StockDashboard({ initialData }: { initialData: ArticleDa
                           value={pendRecibir[item.id] !== undefined ? pendRecibir[item.id] : ''}
                           placeholder="0"
                           onChange={e => handleRecibirChange(item.id, e.target.value)}
-                          className="w-full text-center py-1 px-1 bg-white border border-blue-200 rounded text-blue-700 font-bold focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all shadow-inner hover:border-blue-300"
+                          className="w-full text-center py-1 px-1 bg-white border border-blue-200 rounded text-blue-700 font-bold focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all shadow-inner hover:border-blue-300 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield]"
                         />
                       </td>
 
