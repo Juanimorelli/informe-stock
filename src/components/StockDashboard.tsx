@@ -1,0 +1,322 @@
+'use client';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Search, Info } from 'lucide-react';
+
+type StockBranch = { carhue: number; pigue: number; maza: number; total: number };
+
+type ArticleData = {
+  id: string;
+  nombre: string;
+  rubro: string;
+  proveedor: string;
+  stock: StockBranch;
+  pend_remitir: StockBranch;
+};
+
+export default function StockDashboard({ initialData }: { initialData: ArticleData[] | null }) {
+  const [data, setData] = useState<ArticleData[]>(initialData || []);
+  const [loading, setLoading] = useState(!initialData);
+  const [searchArt, setSearchArt] = useState('');
+  const [searchRubro, setSearchRubro] = useState('');
+  
+  // Custom manual inputs for "Pendiente de Recibir"
+  const [pendRecibir, setPendRecibir] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    if (!initialData) {
+      fetch('/api/stock')
+        .then(r => r.json())
+        .then(d => {
+          if (d.success) setData(d.data);
+          setLoading(false);
+        })
+        .catch(e => {
+          console.error(e);
+          setLoading(false);
+        });
+    }
+  }, [initialData]);
+
+  // Handle pendRecibir input
+  const handleRecibirChange = (id: string, val: string) => {
+    const num = parseInt(val, 10);
+    setPendRecibir(prev => ({
+      ...prev,
+      [id]: isNaN(num) ? 0 : num
+    }));
+  };
+
+  // Logic to determine Action and Distribution
+  const calculateAction = (item: ArticleData, pRecibir: number) => {
+    const stock = item.stock;
+    const pRem = item.pend_remitir;
+
+    const scCarhue = stock.carhue - pRem.carhue;
+    const scPigue = stock.pigue - pRem.pigue;
+    const scMaza = stock.maza - pRem.maza;
+
+    const scParcialTotal = stock.total - pRem.total;
+    const scFinalTotal = scParcialTotal + pRecibir;
+
+    if (scFinalTotal < 0) {
+      return { 
+        status: 'COMPRAR INSUMOS', 
+        color: 'bg-red-100 text-red-700 border-red-200', 
+        warning: `Faltan ${Math.abs(scFinalTotal)} un. en total.` 
+      };
+    }
+
+    if (scParcialTotal < 0 && scFinalTotal >= 0) {
+      return { 
+        status: 'ESPERAR LLEGADA DE MERCADERIA', 
+        color: 'bg-blue-100 text-blue-700 border-blue-200', 
+        warning: `El stock físico no alcanza, pero la compra en tránsito neutraliza el déficit.` 
+      };
+    }
+
+    // if we reach here, scFinalTotal >= 0 and scParcialTotal >= 0.
+    // Check if any specific branch is deeply negative
+    // Even if pRecibir covers the total, we might need a physical transfer if a branch is negative
+    if (scCarhue < 0 || scPigue < 0 || scMaza < 0) {
+      // Find who has surplus and who has deficit
+      const branches = [
+        { name: 'Carhué', sc: scCarhue },
+        { name: 'Pigüé', sc: scPigue },
+        { name: 'Villa Maza', sc: scMaza }
+      ];
+      const deficits = branches.filter(b => b.sc < 0).sort((a,b) => a.sc - b.sc);
+      const surpluses = branches.filter(b => b.sc > 0).sort((a,b) => b.sc - a.sc);
+
+      let suggestions: string[] = [];
+      
+      // Simple greedy matching
+      let sIdx = 0;
+      for (let def of deficits) {
+        let missing = Math.abs(def.sc);
+        while (missing > 0 && sIdx < surpluses.length) {
+          const surp = surpluses[sIdx];
+          const amount = Math.min(missing, surp.sc);
+          if (amount > 0) {
+            suggestions.push(`Enviar ${amount} de ${surp.name} a ${def.name}`);
+            surp.sc -= amount;
+            missing -= amount;
+          }
+          if (surp.sc <= 0) sIdx++;
+        }
+      }
+
+      // If we couldn't resolve deficit physically, it means the surplus is in the incoming `pRecibir`
+      if (suggestions.length === 0 || deficits.some(d => Math.abs(d.sc) > 0 && surpluses.every(s => s.sc === 0))) {
+         suggestions.push("La mercadería entrante (Pend. Recibir) compensará el déficit de las sucursales.");
+      }
+
+      return { 
+        status: 'DISTRIBUIR', 
+        color: 'bg-orange-100 text-orange-700 border-orange-200', 
+        warning: suggestions.join(" | ") 
+      };
+    }
+
+    return { 
+      status: 'OK', 
+      color: 'bg-emerald-50 text-emerald-700 border-emerald-100', 
+      warning: 'Stock suficiente en todas las sucursales.' 
+    };
+  };
+
+  // Grouping and Filtering
+  const groupedData = useMemo(() => {
+    let filtered = data;
+    if (searchArt) {
+      filtered = filtered.filter(d => d.nombre.toLowerCase().includes(searchArt.toLowerCase()));
+    }
+    if (searchRubro) {
+      filtered = filtered.filter(d => d.rubro.toLowerCase().includes(searchRubro.toLowerCase()));
+    }
+
+    // Group by Rubro
+    const groups: Record<string, ArticleData[]> = {};
+    filtered.forEach(d => {
+      const g = d.rubro || 'Sin Rubro';
+      if (!groups[g]) groups[g] = [];
+      groups[g].push(d);
+    });
+
+    // Sort items within groups
+    Object.keys(groups).forEach(g => {
+      groups[g].sort((a, b) => a.nombre.localeCompare(b.nombre));
+    });
+
+    // Sort Groups alphabetically
+    return Object.keys(groups).sort().map(g => ({
+      rubroName: g,
+      items: groups[g]
+    }));
+
+  }, [data, searchArt, searchRubro]);
+
+  if (loading) return <div className="text-center p-12 text-slate-500 font-semibold tracking-wide">Cargando orígen de datos del sistema...</div>;
+
+  return (
+    <div className="max-w-[1700px] mx-auto bg-white rounded-xl shadow-xl overflow-hidden border border-slate-200">
+      
+      {/* Header */}
+      <div className="bg-[#5c7025] p-6 lg:px-8 text-white flex flex-col md:flex-row items-center justify-between gap-6 shadow-md z-10 relative">
+        <div className="flex items-center gap-4">
+          {/* Logo Placeholder - Usually would be an img tag */}
+          <img src="/logo.png" alt="Agrupación Camponuevo S.A." className="h-16 object-contain bg-white p-2 rounded shadow shrink-0" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+          <div>
+            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">Informe Saldo Comercial</h1>
+            <p className="text-[#d7e4b2] text-sm md:text-base font-medium mt-1">Status de Inventario, Ventas y Compras</p>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-800" />
+            <input 
+              type="text" 
+              placeholder="Buscar Rubro..." 
+              value={searchRubro}
+              onChange={e => setSearchRubro(e.target.value)}
+              className="pl-9 pr-4 py-2.5 rounded-md text-slate-800 w-full sm:w-48 bg-[#f5f8ed] border-transparent focus:ring-2 focus:ring-[#c39a2f] focus:outline-none placeholder-emerald-800/50 shadow-inner font-medium transition-all transition-colors"
+            />
+          </div>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-800" />
+            <input 
+              type="text" 
+              placeholder="Buscar Artículo..." 
+              value={searchArt}
+              onChange={e => setSearchArt(e.target.value)}
+              className="pl-9 pr-4 py-2.5 rounded-md text-slate-800 w-full sm:w-64 bg-[#f5f8ed] border-transparent focus:ring-2 focus:ring-[#c39a2f] focus:outline-none placeholder-emerald-800/50 shadow-inner font-medium transition-all transition-colors"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Main Table Content */}
+      <div className="overflow-x-auto custom-scrollbar relative">
+        <table className="w-full text-sm text-left border-collapse min-w-[1200px]">
+          <thead className="text-xs text-slate-700 uppercase bg-slate-100 border-b-2 border-slate-300 shadow-sm sticky top-0 z-0">
+            <tr>
+              <th rowSpan={2} className="px-4 py-3 border-r border-slate-200 w-[350px]">Artículo</th>
+              <th colSpan={4} className="px-4 py-2 border-r border-slate-200 text-center bg-slate-50 text-slate-600">Stock Físico (S.F)</th>
+              <th colSpan={4} className="px-4 py-2 border-r border-slate-200 text-center bg-red-50 text-red-600 font-bold border-b border-red-100 shadow-inner text-shadow-sm">Pendiente Remitir (P.Rem)</th>
+              <th rowSpan={2} className="px-4 py-3 border-r border-slate-200 text-center w-32 bg-blue-50 text-blue-700 cursor-help" title="Mercadería comprada aún sin ingresar al sistema físico.">Pend. Recibir<br/><span className="text-[10px] font-normal opacity-75">(P.Rec)</span></th>
+              <th colSpan={4} className="px-4 py-2 border-r border-slate-200 text-center bg-emerald-50 text-emerald-700 font-bold">Saldo Comercial Parcial (S.C) <br/><span className="text-[10px] font-normal opacity-80">(S.F - P.Rem)</span></th>
+              <th rowSpan={2} className="px-4 py-3 border-r border-slate-200 text-center min-w-24 bg-slate-800 text-white shadow font-bold text-shadow">S.C FINAL<br/><span className="text-[10px] text-slate-300 font-normal leading-tight">(S.C + P.Rec)</span></th>
+              <th rowSpan={2} className="px-6 py-3 border-l-2 border-slate-300 text-center w-[200px] shadow-sm">Acción Sugerida</th>
+            </tr>
+            <tr>
+               {/* Stock */}
+               <th className="px-2 py-2 border-r border-slate-200 bg-slate-50 text-center font-medium">Carh</th>
+               <th className="px-2 py-2 border-r border-slate-200 bg-slate-50 text-center font-medium">Pigüé</th>
+               <th className="px-2 py-2 border-r border-slate-200 bg-slate-50 text-center font-medium">Maza</th>
+               <th className="px-2 py-2 border-r border-slate-200 font-bold text-slate-800 text-center shadow-inner">Total</th>
+               
+               {/* Pend. Remit */}
+               <th className="px-2 py-2 border-r border-slate-200 bg-red-50/50 text-center text-red-600/80">Carh</th>
+               <th className="px-2 py-2 border-r border-slate-200 bg-red-50/50 text-center text-red-600/80">Pigüé</th>
+               <th className="px-2 py-2 border-r border-slate-200 bg-red-50/50 text-center text-red-600/80">Maza</th>
+               <th className="px-2 py-2 border-r border-slate-200 font-bold text-red-700 bg-red-50/80 text-center shadow-inner">Tot</th>
+               
+               {/* SC Parcial */}
+               <th className="px-2 py-2 border-r border-slate-200 bg-emerald-50/50 text-center text-emerald-700/80">Carh</th>
+               <th className="px-2 py-2 border-r border-slate-200 bg-emerald-50/50 text-center text-emerald-700/80">Pigüé</th>
+               <th className="px-2 py-2 border-r border-slate-200 bg-emerald-50/50 text-center text-emerald-700/80">Maza</th>
+               <th className="px-2 py-2 border-r border-slate-200 font-bold text-emerald-800 bg-emerald-50/80 text-center shadow-inner">Tot</th>
+            </tr>
+          </thead>
+          <tbody>
+            {groupedData.length === 0 && (
+              <tr>
+                <td colSpan={15} className="px-6 py-12 text-center text-slate-400 font-medium">
+                  {searchArt || searchRubro ? 'No se encontraron resultados para la búsqueda.' : 'No hay datos de inventario disponibles.'}
+                </td>
+              </tr>
+            )}
+
+            {groupedData.map((group, gIdx) => (
+              <React.Fragment key={gIdx}>
+                {/* Rubro Header */}
+                <tr className="bg-slate-200/70 border-y border-slate-300">
+                  <td colSpan={15} className="px-5 py-2.5 font-bold text-slate-800 tracking-wide uppercase flex items-center gap-2">
+                    <div className="w-1.5 h-4 bg-[#c39a2f] rounded-full"></div>
+                    {group.rubroName}
+                    <span className="text-xs text-slate-500 font-semibold lowercase tracking-normal ml-2">({group.items.length} artículos)</span>
+                  </td>
+                </tr>
+                
+                {/* Articles */}
+                {group.items.map((item, iIdx) => {
+                  const pRecibir = pendRecibir[item.id] || 0;
+                  const action = calculateAction(item, pRecibir);
+                  
+                  const scCarhue = item.stock.carhue - item.pend_remitir.carhue;
+                  const scPigue = item.stock.pigue - item.pend_remitir.pigue;
+                  const scMaza = item.stock.maza - item.pend_remitir.maza;
+                  const scTotal = item.stock.total - item.pend_remitir.total;
+                  const scFinal = scTotal + pRecibir;
+
+                  return (
+                    <tr key={item.id} className="border-b border-slate-100 hover:bg-slate-50/80 transition-colors group">
+                      <td className="px-4 py-3 font-medium text-slate-800 border-r border-slate-100 truncate max-w-[350px]" title={item.nombre}>{item.nombre}</td>
+                      
+                      {/* Stock */}
+                      <td className="px-2 py-3 text-center border-r border-slate-100 text-slate-600">{item.stock.carhue}</td>
+                      <td className="px-2 py-3 text-center border-r border-slate-100 text-slate-600">{item.stock.pigue}</td>
+                      <td className="px-2 py-3 text-center border-r border-slate-100 text-slate-600">{item.stock.maza}</td>
+                      <td className="px-2 py-3 text-center border-r border-slate-200 font-bold bg-slate-50/50 text-slate-700">{item.stock.total}</td>
+                      
+                      {/* Pend Remit */}
+                      <td className="px-2 py-3 text-center border-r border-slate-100 text-red-400">{item.pend_remitir.carhue}</td>
+                      <td className="px-2 py-3 text-center border-r border-slate-100 text-red-400">{item.pend_remitir.pigue}</td>
+                      <td className="px-2 py-3 text-center border-r border-slate-100 text-red-400">{item.pend_remitir.maza}</td>
+                      <td className="px-2 py-3 text-center border-r border-slate-200 font-bold bg-red-50/30 text-red-500">{item.pend_remitir.total}</td>
+                      
+                      {/* Pend. Recibir Editable */}
+                      <td className="px-3 py-2 border-r border-slate-200 bg-blue-50/30">
+                        <input 
+                          type="number" 
+                          min="0"
+                          value={pendRecibir[item.id] !== undefined ? pendRecibir[item.id] : ''}
+                          placeholder="0"
+                          onChange={e => handleRecibirChange(item.id, e.target.value)}
+                          className="w-full text-center py-1.5 px-2 bg-white border border-blue-200 rounded text-blue-700 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all shadow-inner hover:border-blue-300"
+                        />
+                      </td>
+
+                      {/* SC Parcial */}
+                      <td className={`px-2 py-3 text-center border-r border-slate-100 font-medium ${scCarhue < 0 ? 'bg-orange-100/80 text-orange-700' : 'text-emerald-600'}`}>{scCarhue}</td>
+                      <td className={`px-2 py-3 text-center border-r border-slate-100 font-medium ${scPigue < 0 ? 'bg-orange-100/80 text-orange-700' : 'text-emerald-600'}`}>{scPigue}</td>
+                      <td className={`px-2 py-3 text-center border-r border-slate-100 font-medium ${scMaza < 0 ? 'bg-orange-100/80 text-orange-700' : 'text-emerald-600'}`}>{scMaza}</td>
+                      <td className={`px-2 py-3 text-center border-r border-slate-200 font-bold ${scTotal < 0 ? 'bg-red-100/80 text-red-700' : 'bg-emerald-50/50 text-emerald-700'}`}>{scTotal}</td>
+
+                      {/* SC FINAL */}
+                      <td className={`px-2 py-3 text-center border-r border-slate-200 font-extrabold text-base ${scFinal < 0 ? 'bg-red-500 text-white shadow-inner' : 'bg-slate-700 text-white shadow-inner'}`}>
+                        {scFinal}
+                      </td>
+
+                      {/* Action */}
+                      <td className="px-2 py-2 border-l-2 border-slate-200">
+                        <div className={`px-3 py-1.5 rounded-md border text-xs font-bold flex flex-col items-center justify-center text-center shadow-sm h-full w-full ${action.color}`}>
+                          <span>{action.status}</span>
+                          {action.warning && action.status !== 'OK' && (
+                            <span className="mt-1 text-[10px] font-medium opacity-90 leading-tight border-t border-current/20 pt-1 w-full" title={action.warning}>
+                              {action.warning}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </React.Fragment>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
