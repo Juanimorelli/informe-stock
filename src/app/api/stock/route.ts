@@ -23,20 +23,24 @@ export async function GET() {
       const ID = row[artIdKey];
       if (!ID) return;
 
-      const sucursal = (row['Sucursal'] || '').toUpperCase();
+      const sucursalCode = (row['Sucursal'] || '').toUpperCase();
+      const comisionista = (row['Comisionista'] || '').toUpperCase();
       const pendVal = row['P.Rem/Ped'] || 0;
 
       if (!pendMap[ID]) {
         pendMap[ID] = { CARHUE: 0, PIGUE: 0, MAZA: 0, TOTAL: 0 };
       }
 
-      if (sucursal.includes('CARHUE')) {
+      // Branch mapping logic based on Sucursal numeric code or Comisionista string
+      if (sucursalCode === '0001' || comisionista.includes('CARHUE')) {
         pendMap[ID].CARHUE += pendVal;
-      } else if (sucursal.includes('PIGUE') || sucursal.includes('PIGUÉ')) {
+      } else if (sucursalCode === '0007' || comisionista.includes('PIGUE') || comisionista.includes('PIGUÉ')) {
         pendMap[ID].PIGUE += pendVal;
-      } else if (sucursal.includes('MAZA')) {
+      } else if (sucursalCode === '0006' || comisionista.includes('MAZA')) {
         pendMap[ID].MAZA += pendVal;
       }
+      
+      // Always add to total, regardless of branch
       pendMap[ID].TOTAL += pendVal;
     });
 
