@@ -16,11 +16,17 @@ type ArticleData = {
 export default function StockDashboard({ initialData }: { initialData: ArticleData[] | null }) {
   const [data, setData] = useState<ArticleData[]>(initialData || []);
   const [loading, setLoading] = useState(!initialData);
-  const [searchArt, setSearchArt] = useState('');
-  const [searchRubro, setSearchRubro] = useState('');
+  const [globalSearch, setGlobalSearch] = useState('');
   
   // Custom manual inputs for "Pendiente de Recibir"
   const [pendRecibir, setPendRecibir] = useState<Record<string, number>>({});
+  
+  // Collapsible categories state
+  const [collapsedRubros, setCollapsedRubros] = useState<Record<string, boolean>>({});
+
+  const toggleRubro = (rubro: string) => {
+    setCollapsedRubros(prev => ({ ...prev, [rubro]: !prev[rubro] }));
+  };
 
   useEffect(() => {
     if (!initialData) {
@@ -39,11 +45,15 @@ export default function StockDashboard({ initialData }: { initialData: ArticleDa
 
   // Handle pendRecibir input
   const handleRecibirChange = (id: string, val: string) => {
-    const num = parseInt(val, 10);
-    setPendRecibir(prev => ({
-      ...prev,
-      [id]: isNaN(num) ? 0 : num
-    }));
+    setPendRecibir(prev => {
+      if (val === '') {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      }
+      const num = parseInt(val, 10);
+      return { ...prev, [id]: isNaN(num) ? 0 : num };
+    });
   };
 
   // Logic to determine Action and Distribution
@@ -127,11 +137,13 @@ export default function StockDashboard({ initialData }: { initialData: ArticleDa
   // Grouping and Filtering
   const groupedData = useMemo(() => {
     let filtered = data;
-    if (searchArt) {
-      filtered = filtered.filter(d => d.nombre.toLowerCase().includes(searchArt.toLowerCase()));
-    }
-    if (searchRubro) {
-      filtered = filtered.filter(d => d.rubro.toLowerCase().includes(searchRubro.toLowerCase()));
+    if (globalSearch) {
+      const searchLower = globalSearch.toLowerCase();
+      filtered = filtered.filter(d => 
+        (d.nombre && d.nombre.toLowerCase().includes(searchLower)) ||
+        (d.rubro && d.rubro.toLowerCase().includes(searchLower)) ||
+        (d.proveedor && d.proveedor.toLowerCase().includes(searchLower))
+      );
     }
 
     // Group by Rubro
@@ -201,7 +213,7 @@ export default function StockDashboard({ initialData }: { initialData: ArticleDa
       items: groups[g]
     }));
 
-  }, [data, searchArt, searchRubro]);
+  }, [data, globalSearch]);
 
   if (loading) return <div className="text-center p-12 text-slate-500 font-semibold tracking-wide">Cargando orígen de datos del sistema...</div>;
 
@@ -220,24 +232,14 @@ export default function StockDashboard({ initialData }: { initialData: ArticleDa
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-          <div className="relative">
+          <div className="relative w-full sm:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-800" />
             <input 
               type="text" 
-              placeholder="Buscar Rubro..." 
-              value={searchRubro}
-              onChange={e => setSearchRubro(e.target.value)}
-              className="pl-9 pr-4 py-2.5 rounded-md text-slate-800 w-full sm:w-48 bg-[#f5f8ed] border-transparent focus:ring-2 focus:ring-[#c39a2f] focus:outline-none placeholder-emerald-800/50 shadow-inner font-medium transition-all transition-colors"
-            />
-          </div>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-800" />
-            <input 
-              type="text" 
-              placeholder="Buscar Artículo..." 
-              value={searchArt}
-              onChange={e => setSearchArt(e.target.value)}
-              className="pl-9 pr-4 py-2.5 rounded-md text-slate-800 w-full sm:w-64 bg-[#f5f8ed] border-transparent focus:ring-2 focus:ring-[#c39a2f] focus:outline-none placeholder-emerald-800/50 shadow-inner font-medium transition-all transition-colors"
+              placeholder="Buscar por Rubro, Artículo o Proveedor..." 
+              value={globalSearch}
+              onChange={e => setGlobalSearch(e.target.value)}
+              className="pl-9 pr-4 py-2.5 rounded-md text-slate-800 w-full bg-[#f5f8ed] border-transparent focus:ring-2 focus:ring-[#c39a2f] focus:outline-none placeholder-emerald-800/50 shadow-inner font-medium transition-all transition-colors"
             />
           </div>
         </div>
@@ -251,9 +253,9 @@ export default function StockDashboard({ initialData }: { initialData: ArticleDa
               <th rowSpan={2} className="px-2 py-2 border-r border-slate-200 w-[220px]">Artículo</th>
               <th colSpan={4} className="px-1 py-1 border-r border-slate-200 text-center bg-slate-50 text-slate-600 font-bold">Stock Físico<br/><span className="opacity-80">(S.F)</span></th>
               <th colSpan={4} className="px-1 py-1 border-r border-slate-200 text-center bg-red-50 text-red-600 font-bold border-b border-red-100 shadow-inner text-shadow-sm">Pendiente Remitir<br/><span className="opacity-80">(P.Rem)</span></th>
-              <th rowSpan={2} className="px-1 py-2 border-r border-slate-200 text-center w-[60px] bg-blue-50 text-blue-700 cursor-help" title="Mercadería comprada aún sin ingresar al sistema físico.">Pend.<br/>Recibir<br/><span className="font-normal opacity-75">(P.Rec)</span></th>
+              <th rowSpan={2} className="px-1 py-2 border-r border-slate-200 text-center w-[64px] bg-blue-50 text-blue-700 cursor-help" title="Mercadería comprada aún sin ingresar al sistema físico.">Pend.<br/>Recibir<br/><span className="font-normal opacity-75">(P.Rec)</span></th>
               <th colSpan={4} className="px-1 py-1 border-r border-slate-200 text-center bg-emerald-50 text-emerald-700 font-bold">Saldo Comercial<br/><span className="font-normal opacity-80">(S.F - P.Rem)</span></th>
-              <th rowSpan={2} className="px-1 py-2 border-r border-slate-200 text-center w-[60px] bg-slate-800 text-white shadow font-bold text-shadow">S.C<br/>FINAL<br/><span className="text-[9px] text-slate-300 font-normal leading-[1]">(S.C+P.Rec)</span></th>
+              <th rowSpan={2} className="px-1 py-2 border-r border-slate-200 text-center w-[64px] bg-slate-800 text-white shadow font-bold text-shadow">S.C<br/>FINAL<br/><span className="text-[9px] text-slate-300 font-normal leading-[1]">(S.C+P.Rec)</span></th>
               <th rowSpan={2} className="px-2 py-2 border-l-2 border-slate-300 text-center w-[110px] shadow-sm">Acción Sugerida</th>
             </tr>
             <tr>
@@ -280,7 +282,7 @@ export default function StockDashboard({ initialData }: { initialData: ArticleDa
             {groupedData.length === 0 && (
               <tr>
                 <td colSpan={15} className="px-6 py-12 text-center text-slate-400 font-medium">
-                  {searchArt || searchRubro ? 'No se encontraron resultados para la búsqueda.' : 'No hay datos de inventario disponibles.'}
+                  {globalSearch ? 'No se encontraron resultados para la búsqueda.' : 'No hay datos de inventario disponibles.'}
                 </td>
               </tr>
             )}
@@ -288,16 +290,21 @@ export default function StockDashboard({ initialData }: { initialData: ArticleDa
             {groupedData.map((group, gIdx) => (
               <React.Fragment key={gIdx}>
                 {/* Rubro Header */}
-                <tr className="bg-slate-200/70 border-y border-slate-300">
-                  <td colSpan={15} className="px-3 py-2 font-bold text-slate-800 tracking-wide uppercase flex items-center gap-2">
-                    <div className="w-1.5 h-3 bg-[#c39a2f] rounded-full"></div>
-                    {group.rubroName}
-                    <span className="text-[10px] text-slate-500 font-semibold lowercase tracking-normal ml-2">({group.items.length} artículos)</span>
+                <tr className="bg-slate-200/70 border-y border-slate-300 cursor-pointer hover:bg-slate-300/60 transition-colors select-none" onClick={() => toggleRubro(group.rubroName)}>
+                  <td colSpan={15} className="px-3 py-2 font-bold text-slate-800 tracking-wide uppercase">
+                    <div className="flex items-center gap-2 w-full">
+                      <button className="w-5 h-5 flex items-center justify-center rounded bg-slate-100 text-slate-600 hover:bg-white hover:text-slate-800 transition-colors shadow-sm text-sm leading-none border border-slate-300 font-black">
+                        {collapsedRubros[group.rubroName] ? '+' : '-'}
+                      </button>
+                      <div className="w-1.5 h-3 bg-[#c39a2f] rounded-full"></div>
+                      {group.rubroName}
+                      <span className="text-[10px] text-slate-500 font-semibold lowercase tracking-normal ml-2">({group.items.length} artículos)</span>
+                    </div>
                   </td>
                 </tr>
                 
                 {/* Articles */}
-                {group.items.map((item, iIdx) => {
+                {!collapsedRubros[group.rubroName] && group.items.map((item, iIdx) => {
                   const pRecibir = pendRecibir[item.id] || 0;
                   const action = calculateAction(item, pRecibir);
                   
