@@ -245,35 +245,35 @@ export default function StockDashboard({ initialData }: { initialData: ArticleDa
 
       {/* Main Table Content */}
       <div className="overflow-x-auto custom-scrollbar relative">
-        <table className="w-full text-xs text-left border-collapse min-w-max">
+        <table className="w-full text-xs text-left border-collapse table-fixed min-w-[1000px]">
           <thead className="text-[10px] md:text-xs text-slate-700 uppercase bg-slate-100 border-b-2 border-slate-300 shadow-sm sticky top-0 z-0 leading-tight">
             <tr>
-              <th rowSpan={2} className="px-2 py-2 border-r border-slate-200 min-w-[200px] w-[250px]">Artículo</th>
+              <th rowSpan={2} className="px-2 py-2 border-r border-slate-200 w-[220px]">Artículo</th>
               <th colSpan={4} className="px-1 py-1 border-r border-slate-200 text-center bg-slate-50 text-slate-600 font-bold">Stock Físico<br/><span className="opacity-80">(S.F)</span></th>
               <th colSpan={4} className="px-1 py-1 border-r border-slate-200 text-center bg-red-50 text-red-600 font-bold border-b border-red-100 shadow-inner text-shadow-sm">Pendiente Remitir<br/><span className="opacity-80">(P.Rem)</span></th>
-              <th rowSpan={2} className="px-2 py-2 border-r border-slate-200 text-center w-[85px] bg-blue-50 text-blue-700 cursor-help" title="Mercadería comprada aún sin ingresar al sistema físico.">Pend.<br/>Recibir<br/><span className="font-normal opacity-75">(P.Rec)</span></th>
+              <th rowSpan={2} className="px-1 py-2 border-r border-slate-200 text-center w-[60px] bg-blue-50 text-blue-700 cursor-help" title="Mercadería comprada aún sin ingresar al sistema físico.">Pend.<br/>Recibir<br/><span className="font-normal opacity-75">(P.Rec)</span></th>
               <th colSpan={4} className="px-1 py-1 border-r border-slate-200 text-center bg-emerald-50 text-emerald-700 font-bold">Saldo Comercial<br/><span className="font-normal opacity-80">(S.F - P.Rem)</span></th>
-              <th rowSpan={2} className="px-2 py-2 border-r border-slate-200 text-center w-[75px] bg-slate-800 text-white shadow font-bold text-shadow">S.C<br/>FINAL<br/><span className="text-[9px] text-slate-300 font-normal leading-[1]">(S.C+P.Rec)</span></th>
-              <th rowSpan={2} className="px-2 py-2 border-l-2 border-slate-300 text-center w-[160px] max-w-[180px] shadow-sm">Acción Sugerida</th>
+              <th rowSpan={2} className="px-1 py-2 border-r border-slate-200 text-center w-[60px] bg-slate-800 text-white shadow font-bold text-shadow">S.C<br/>FINAL<br/><span className="text-[9px] text-slate-300 font-normal leading-[1]">(S.C+P.Rec)</span></th>
+              <th rowSpan={2} className="px-2 py-2 border-l-2 border-slate-300 text-center w-[110px] shadow-sm">Acción Sugerida</th>
             </tr>
             <tr>
                {/* Stock */}
-               <th className="px-1 py-1.5 border-r border-slate-200 bg-slate-50 text-center font-medium">Carh</th>
-               <th className="px-1 py-1.5 border-r border-slate-200 bg-slate-50 text-center font-medium">Pigüé</th>
-               <th className="px-1 py-1.5 border-r border-slate-200 bg-slate-50 text-center font-medium">Maza</th>
-               <th className="px-1 py-1.5 border-r border-slate-200 font-bold text-slate-800 text-center shadow-inner">Tot</th>
+               <th className="px-0 py-1.5 border-r border-slate-200 bg-slate-50 text-center font-medium w-[48px]">Carh</th>
+               <th className="px-0 py-1.5 border-r border-slate-200 bg-slate-50 text-center font-medium w-[48px]">Pigüé</th>
+               <th className="px-0 py-1.5 border-r border-slate-200 bg-slate-50 text-center font-medium w-[48px]">Maza</th>
+               <th className="px-0 py-1.5 border-r border-slate-200 font-bold text-slate-800 text-center shadow-inner w-[56px]">Tot</th>
                
                {/* Pend. Remit */}
-               <th className="px-1 py-1.5 border-r border-slate-200 bg-red-50/50 text-center text-red-600/80">Carh</th>
-               <th className="px-1 py-1.5 border-r border-slate-200 bg-red-50/50 text-center text-red-600/80">Pigüé</th>
-               <th className="px-1 py-1.5 border-r border-slate-200 bg-red-50/50 text-center text-red-600/80">Maza</th>
-               <th className="px-1 py-1.5 border-r border-slate-200 font-bold text-red-700 bg-red-50/80 text-center shadow-inner">Tot</th>
+               <th className="px-0 py-1.5 border-r border-slate-200 bg-red-50/50 text-center text-red-600/80 w-[48px]">Carh</th>
+               <th className="px-0 py-1.5 border-r border-slate-200 bg-red-50/50 text-center text-red-600/80 w-[48px]">Pigüé</th>
+               <th className="px-0 py-1.5 border-r border-slate-200 bg-red-50/50 text-center text-red-600/80 w-[48px]">Maza</th>
+               <th className="px-0 py-1.5 border-r border-slate-200 font-bold text-red-700 bg-red-50/80 text-center shadow-inner w-[56px]">Tot</th>
                
                {/* SC Parcial */}
-               <th className="px-1 py-1.5 border-r border-slate-200 bg-emerald-50/50 text-center text-emerald-700/80">Carh</th>
-               <th className="px-1 py-1.5 border-r border-slate-200 bg-emerald-50/50 text-center text-emerald-700/80">Pigüé</th>
-               <th className="px-1 py-1.5 border-r border-slate-200 bg-emerald-50/50 text-center text-emerald-700/80">Maza</th>
-               <th className="px-1 py-1.5 border-r border-slate-200 font-bold text-emerald-800 bg-emerald-50/80 text-center shadow-inner">Tot</th>
+               <th className="px-0 py-1.5 border-r border-slate-200 bg-emerald-50/50 text-center text-emerald-700/80 w-[48px]">Carh</th>
+               <th className="px-0 py-1.5 border-r border-slate-200 bg-emerald-50/50 text-center text-emerald-700/80 w-[48px]">Pigüé</th>
+               <th className="px-0 py-1.5 border-r border-slate-200 bg-emerald-50/50 text-center text-emerald-700/80 w-[48px]">Maza</th>
+               <th className="px-0 py-1.5 border-r border-slate-200 font-bold text-emerald-800 bg-emerald-50/80 text-center shadow-inner w-[56px]">Tot</th>
             </tr>
           </thead>
           <tbody>
