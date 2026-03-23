@@ -115,10 +115,8 @@ export default function StockDashboard({ initialData }: { initialData: ArticleDa
         }
       }
 
-      // If we couldn't resolve deficit physically, it means the surplus is in the incoming `pRecibir`
-      if (suggestions.length === 0 || deficits.some(d => Math.abs(d.sc) > 0 && surpluses.every(s => s.sc === 0))) {
-         suggestions.push("La mercadería entrante (Pend. Recibir) compensará el déficit de las sucursales.");
-      }
+      // If after the greedy pass there are still unresolved deficits,
+      // the compact table already shows the totals — nothing extra to print.
 
       return { 
         status: 'DISTRIBUIR', 
@@ -308,11 +306,14 @@ export default function StockDashboard({ initialData }: { initialData: ArticleDa
                   const pRecibir = pendRecibir[item.id] || 0;
                   const action = calculateAction(item, pRecibir);
                   
-                  const scCarhue = item.stock.carhue - item.pend_remitir.carhue;
-                  const scPigue = item.stock.pigue - item.pend_remitir.pigue;
-                  const scMaza = item.stock.maza - item.pend_remitir.maza;
-                  const scTotal = item.stock.total - item.pend_remitir.total;
-                  const scFinal = scTotal + pRecibir;
+                  const round = (n: number) => parseFloat(n.toFixed(4));
+                  const scCarhue = round(item.stock.carhue - item.pend_remitir.carhue);
+                  const scPigue  = round(item.stock.pigue  - item.pend_remitir.pigue);
+                  const scMaza   = round(item.stock.maza   - item.pend_remitir.maza);
+                  const scTotal  = round(item.stock.total  - item.pend_remitir.total);
+                  const scFinal  = round(scTotal + pRecibir);
+                  // Display helper: show integer if no fractional part
+                  const fmt = (n: number) => Number.isInteger(n) ? n.toString() : n.toLocaleString('es-AR', { maximumFractionDigits: 4 });
 
                   return (
                     <tr key={item.id} className="border-b border-slate-100 hover:bg-slate-50/80 transition-colors group">
@@ -343,14 +344,14 @@ export default function StockDashboard({ initialData }: { initialData: ArticleDa
                       </td>
 
                       {/* SC Parcial */}
-                      <td className={`px-1 py-2 text-center border-r border-slate-100 font-semibold ${scCarhue < 0 ? 'bg-orange-100/80 text-orange-700' : 'text-emerald-700/80'}`}>{scCarhue}</td>
-                      <td className={`px-1 py-2 text-center border-r border-slate-100 font-semibold ${scPigue < 0 ? 'bg-orange-100/80 text-orange-700' : 'text-emerald-700/80'}`}>{scPigue}</td>
-                      <td className={`px-1 py-2 text-center border-r border-slate-100 font-semibold ${scMaza < 0 ? 'bg-orange-100/80 text-orange-700' : 'text-emerald-700/80'}`}>{scMaza}</td>
-                      <td className={`px-1 py-2 text-center border-r border-slate-200 font-bold ${scTotal < 0 ? 'bg-red-100/80 text-red-700' : 'bg-emerald-50/50 text-emerald-700'}`}>{scTotal}</td>
+                      <td className={`px-1 py-2 text-center border-r border-slate-100 font-semibold ${scCarhue < 0 ? 'bg-orange-100/80 text-orange-700' : 'text-emerald-700/80'}`}>{fmt(scCarhue)}</td>
+                      <td className={`px-1 py-2 text-center border-r border-slate-100 font-semibold ${scPigue  < 0 ? 'bg-orange-100/80 text-orange-700' : 'text-emerald-700/80'}`}>{fmt(scPigue)}</td>
+                      <td className={`px-1 py-2 text-center border-r border-slate-100 font-semibold ${scMaza   < 0 ? 'bg-orange-100/80 text-orange-700' : 'text-emerald-700/80'}`}>{fmt(scMaza)}</td>
+                      <td className={`px-1 py-2 text-center border-r border-slate-200 font-bold ${scTotal  < 0 ? 'bg-red-100/80 text-red-700' : 'bg-emerald-50/50 text-emerald-700'}`}>{fmt(scTotal)}</td>
 
                       {/* SC FINAL */}
                       <td className={`px-1 py-2 text-center border-r border-slate-200 font-extrabold text-sm ${scFinal < 0 ? 'bg-red-500 text-white shadow-inner' : 'bg-slate-700 text-white shadow-inner'}`}>
-                        {scFinal}
+                        {fmt(scFinal)}
                       </td>
 
                       {/* Action */}
