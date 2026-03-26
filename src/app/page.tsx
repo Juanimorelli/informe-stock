@@ -22,7 +22,7 @@ export default async function Page() {
   const initialData = await getStockData();
 
   return (
-    <main className="min-h-screen bg-slate-50 p-4 md:p-8">
+    <main className="h-screen overflow-hidden bg-slate-100 flex flex-col p-2 md:p-4">
       <StockDashboard initialData={initialData} />
     </main>
   );

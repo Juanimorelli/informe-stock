@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, Info } from 'lucide-react';
+import { Search, ClipboardList, X } from 'lucide-react';
 
 type StockBranch = { carhue: number; pigue: number; maza: number; total: number };
 
@@ -20,6 +20,7 @@ export default function StockDashboard({ initialData }: { initialData: ArticleDa
   
   // Custom manual inputs for "Pendiente de Recibir"
   const [pendRecibir, setPendRecibir] = useState<Record<string, number>>({});
+  const [isSummaryOpen, setSummaryOpen] = useState(false);
   
   // Collapsible categories state
   const [collapsedRubros, setCollapsedRubros] = useState<Record<string, boolean>>({});
@@ -213,38 +214,60 @@ export default function StockDashboard({ initialData }: { initialData: ArticleDa
 
   }, [data, globalSearch]);
 
+  const actionSummary = useMemo(() => {
+    const listComprar: {item: ArticleData, action: any}[] = [];
+    const listDistribuir: {item: ArticleData, action: any}[] = [];
+
+    groupedData.forEach(group => {
+      group.items.forEach(item => {
+        const pRecibir = pendRecibir[item.id] || 0;
+        const action = calculateAction(item, pRecibir);
+        if (action.status === 'COMPRAR') listComprar.push({ item, action });
+        else if (action.status === 'DISTRIBUIR') listDistribuir.push({ item, action });
+      });
+    });
+
+    return { listComprar, listDistribuir };
+  }, [groupedData, pendRecibir]);
+
   if (loading) return <div className="text-center p-12 text-slate-500 font-semibold tracking-wide">Cargando orígen de datos del sistema...</div>;
 
   return (
-    <div className="max-w-[1700px] mx-auto bg-white rounded-xl shadow-xl overflow-hidden border border-slate-200">
+    <div className="h-full w-full mx-auto bg-white rounded-xl shadow-xl overflow-hidden border border-slate-200 flex flex-col">
       
       {/* Header */}
-      <div className="bg-[#5c7025] p-6 lg:px-8 text-white flex flex-col md:flex-row items-center justify-between gap-6 shadow-md z-10 relative">
-        <div className="flex items-center gap-4">
-          {/* Logo Placeholder - Usually would be an img tag */}
-          <img src="/logo.png" alt="Agrupación Camponuevo S.A." className="h-16 object-contain bg-white p-2 rounded shadow shrink-0" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+      <div className="flex-none bg-[#5c7025] p-4 lg:px-8 text-white flex flex-col md:flex-row items-center justify-between gap-4 shadow-md z-10 relative">
+        <div className="flex items-center gap-4 w-full md:w-auto">
+          <img src="/logo.png" alt="ACSA" className="h-12 object-contain bg-white p-1 rounded shadow shrink-0" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
           <div>
-            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">Informe Saldo Comercial</h1>
-            <p className="text-[#d7e4b2] text-sm md:text-base font-medium mt-1">Status de Inventario, Ventas y Compras</p>
+            <h1 className="text-xl md:text-2xl font-extrabold tracking-tight">Informe Comercial</h1>
+            <p className="text-[#d7e4b2] text-xs md:text-sm font-medium mt-0.5">Status de Inventario y Recomendaciones</p>
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-          <div className="relative w-full sm:w-80">
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto items-center">
+          <div className="relative w-full sm:w-72">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-800" />
             <input 
               type="text" 
-              placeholder="Buscar por Rubro, Artículo o Proveedor..." 
+              placeholder="Buscar por Rubro, Artículo..." 
               value={globalSearch}
               onChange={e => setGlobalSearch(e.target.value)}
-              className="pl-9 pr-4 py-2.5 rounded-md text-slate-800 w-full bg-[#f5f8ed] border-transparent focus:ring-2 focus:ring-[#c39a2f] focus:outline-none placeholder-emerald-800/50 shadow-inner font-medium transition-all transition-colors"
+              className="pl-9 pr-4 py-2 rounded-md text-slate-800 w-full bg-[#f5f8ed] focus:ring-2 focus:ring-[#c39a2f] focus:outline-none placeholder-emerald-800/50 shadow-inner font-medium text-sm"
             />
           </div>
+          <button 
+            onClick={() => setSummaryOpen(true)}
+            className="flex items-center gap-2 bg-[#c39a2f] hover:bg-[#a68225] text-white px-4 py-2 rounded-md font-bold text-sm shadow-md transition-colors whitespace-nowrap"
+          >
+            <ClipboardList className="w-4 h-4" />
+            Ver Resumen Ejecutivo
+          </button>
         </div>
       </div>
 
       {/* Main Table Content */}
-      <div className="overflow-x-auto custom-scrollbar relative">
+      <div className="flex-1 overflow-auto custom-scrollbar relative">
         <table className="w-full text-xs text-left border-collapse table-fixed min-w-[1000px]">
           <thead className="text-[10px] md:text-xs text-slate-700 uppercase bg-slate-100 border-b-2 border-slate-300 shadow-sm sticky top-0 z-0 leading-tight">
             <tr>
@@ -373,6 +396,88 @@ export default function StockDashboard({ initialData }: { initialData: ArticleDa
           </tbody>
         </table>
       </div>
+
+      {/* Modal de Resumen Ejecutivo */}
+      {isSummaryOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between p-4 md:p-5 border-b border-slate-200 bg-slate-50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[#c39a2f]/20 flex items-center justify-center">
+                  <ClipboardList className="w-5 h-5 text-[#a68225]" />
+                </div>
+                <div>
+                  <h2 className="text-lg md:text-xl font-bold text-slate-800 tracking-tight">Resumen Ejecutivo de Acción</h2>
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">Pendientes de compra y envíos sugeridos entre sucursales.</p>
+                </div>
+              </div>
+              <button onClick={() => setSummaryOpen(false)} className="text-slate-400 hover:text-slate-700 hover:bg-slate-200 p-2 rounded-full transition-colors">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="p-4 md:p-6 overflow-y-auto flex-1 bg-slate-50/50">
+              
+              <div className="mb-8">
+                <h3 className="text-red-700 font-bold text-sm uppercase tracking-widest mb-4 flex items-center gap-2 border-b border-red-200 pb-2">
+                  <span className="w-2 h-2 rounded-full bg-red-600"></span> Requerimientos de Compra
+                </h3>
+                {actionSummary.listComprar.length === 0 ? (
+                   <p className="text-sm text-slate-500 italic">No hay artículos con déficit crítico de stock final.</p>
+                ) : (
+                  <ul className="space-y-3">
+                    {actionSummary.listComprar.map((req, idx) => (
+                      <li key={idx} className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm flex items-start gap-3">
+                        <div className="w-1.5 h-full rounded-full bg-red-500 self-stretch shrink-0"></div>
+                        <div>
+                           <p className="font-bold text-slate-800 text-sm">{req.item.nombre}</p>
+                           <p className="text-xs text-red-600 font-medium mt-1">{req.action.warning}</p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              <div>
+                <h3 className="text-orange-600 font-bold text-sm uppercase tracking-widest mb-4 flex items-center gap-2 border-b border-orange-200 pb-2">
+                  <span className="w-2 h-2 rounded-full bg-orange-500"></span> Traslados Físicos Sugeridos
+                </h3>
+                {actionSummary.listDistribuir.length === 0 ? (
+                   <p className="text-sm text-slate-500 italic">No hay traslados o compensaciones físicas requeridas.</p>
+                ) : (
+                  <ul className="space-y-3">
+                    {actionSummary.listDistribuir.map((req, idx) => (
+                      <li key={idx} className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm flex items-start gap-3">
+                        <div className="w-1.5 h-full rounded-full bg-orange-400 self-stretch shrink-0"></div>
+                        <div className="flex-1 w-full">
+                           <p className="font-bold text-slate-800 text-sm flex justify-between">
+                              {req.item.nombre}
+                              <span className="text-[10px] text-slate-400 font-medium bg-slate-100 px-2 py-0.5 rounded">{req.item.rubro}</span>
+                           </p>
+                           <div className="text-xs text-slate-600 font-medium mt-2 space-y-1">
+                              {req.action.warning.split(" | ").map((s: string, subIdx: number) => (
+                                 <div key={subIdx} className="bg-orange-50 text-orange-800 px-3 py-1.5 rounded border border-orange-100 w-fit">📦 {s}</div>
+                              ))}
+                           </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+            </div>
+            
+            <div className="p-4 border-t border-slate-200 bg-white flex justify-end">
+               <button onClick={() => setSummaryOpen(false)} className="bg-slate-800 text-white font-bold text-sm px-6 py-2 rounded-lg hover:bg-slate-700 transition shadow">
+                 Cerrar
+               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
