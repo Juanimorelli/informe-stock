@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ClipboardList, X } from 'lucide-react';
+import { Search, ClipboardList, X, Download } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 type StockBranch = { carhue: number; pigue: number; maza: number; total: number };
 
@@ -57,7 +58,6 @@ export default function StockDashboard({ initialData }: { initialData: ArticleDa
     });
   };
 
-  // Logic to determine Action and Distribution
   const calculateAction = (item: ArticleData, pRecibir: number) => {
     const stock = item.stock;
     const pRem = item.pend_remitir;
@@ -69,11 +69,15 @@ export default function StockDashboard({ initialData }: { initialData: ArticleDa
     const scParcialTotal = stock.total - pRem.total;
     const scFinalTotal = scParcialTotal + pRecibir;
 
+    let actions: { tipo: string, cantidad: number, detalle: string }[] = [];
+
     if (scFinalTotal < 0) {
+      actions.push({ tipo: 'COMPRAR', cantidad: Math.abs(scFinalTotal), detalle: 'Comprar por déficit total' });
       return { 
         status: 'COMPRAR', 
         color: 'bg-red-100 text-red-700 border-red-200', 
-        warning: `Faltan ${Math.abs(scFinalTotal)} un. en total.` 
+        warning: `Faltan ${Math.abs(scFinalTotal)} un. en total.`,
+        actions
       };
     }
 
@@ -81,15 +85,12 @@ export default function StockDashboard({ initialData }: { initialData: ArticleDa
       return { 
         status: 'ESPERAR LLEGADA DE MERCADERIA', 
         color: 'bg-blue-100 text-blue-700 border-blue-200', 
-        warning: `El stock físico no alcanza, pero la compra en tránsito neutraliza el déficit.` 
+        warning: `El stock físico no alcanza, pero la compra en tránsito neutraliza el déficit.`,
+        actions: []
       };
     }
 
-    // if we reach here, scFinalTotal >= 0 and scParcialTotal >= 0.
-    // Check if any specific branch is deeply negative
-    // Even if pRecibir covers the total, we might need a physical transfer if a branch is negative
     if (scCarhue < 0 || scPigue < 0 || scMaza < 0) {
-      // Find who has surplus and who has deficit
       const branches = [
         { name: 'Carhué', sc: scCarhue },
         { name: 'Pigüé', sc: scPigue },
@@ -100,7 +101,6 @@ export default function StockDashboard({ initialData }: { initialData: ArticleDa
 
       let suggestions: string[] = [];
       
-      // Simple greedy matching
       let sIdx = 0;
       for (let def of deficits) {
         let missing = Math.abs(def.sc);
@@ -109,6 +109,7 @@ export default function StockDashboard({ initialData }: { initialData: ArticleDa
           const amount = Math.min(missing, surp.sc);
           if (amount > 0) {
             suggestions.push(`Enviar ${amount} de ${surp.name} a ${def.name}`);
+            actions.push({ tipo: 'TRASLADAR', cantidad: amount, detalle: `Desde ${surp.name} hacia ${def.name}` });
             surp.sc -= amount;
             missing -= amount;
           }
@@ -116,20 +117,19 @@ export default function StockDashboard({ initialData }: { initialData: ArticleDa
         }
       }
 
-      // If after the greedy pass there are still unresolved deficits,
-      // the compact table already shows the totals — nothing extra to print.
-
       return { 
         status: 'DISTRIBUIR', 
         color: 'bg-orange-100 text-orange-700 border-orange-200', 
-        warning: suggestions.join(" | ") 
+        warning: suggestions.join(" | "),
+        actions
       };
     }
 
     return { 
       status: 'OK', 
       color: 'bg-emerald-50 text-emerald-700 border-emerald-100', 
-      warning: 'Stock suficiente en todas las sucursales.' 
+      warning: 'Stock suficiente en todas las sucursales.',
+      actions: []
     };
   };
 
@@ -214,21 +214,44 @@ export default function StockDashboard({ initialData }: { initialData: ArticleDa
 
   }, [data, globalSearch]);
 
-  const actionSummary = useMemo(() => {
-    const listComprar: {item: ArticleData, action: any}[] = [];
-    const listDistribuir: {item: ArticleData, action: any}[] = [];
-
+  const actionSummaryRows = useMemo(() => {
+    const rows: { articulo: string, rubro: string, tipo: string, cantidad: number, detalle: string }[] = [];
     groupedData.forEach(group => {
       group.items.forEach(item => {
         const pRecibir = pendRecibir[item.id] || 0;
         const action = calculateAction(item, pRecibir);
-        if (action.status === 'COMPRAR') listComprar.push({ item, action });
-        else if (action.status === 'DISTRIBUIR') listDistribuir.push({ item, action });
+        if (action.actions && action.actions.length > 0) {
+           action.actions.forEach(act => {
+              rows.push({
+                 articulo: item.nombre,
+                 rubro: item.rubro,
+                 tipo: act.tipo,
+                 cantidad: act.cantidad,
+                 detalle: act.detalle
+              });
+           });
+        }
       });
     });
-
-    return { listComprar, listDistribuir };
+    // Sort so COMPRAR is first, then TRASLADAR
+    rows.sort((a, b) => a.tipo.localeCompare(b.tipo) || a.rubro.localeCompare(b.rubro) || a.articulo.localeCompare(b.articulo));
+    return rows;
   }, [groupedData, pendRecibir]);
+
+  const handleExportSummary = () => {
+    if (!actionSummaryRows.length) return;
+    const wsData = actionSummaryRows.map(row => ({
+      "Artículo": row.articulo,
+      "Rubro": row.rubro,
+      "Acción a Tomar": row.tipo,
+      "Cantidad": row.cantidad,
+      "Detalle / Origen-Destino": row.detalle
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(wsData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Acciones de Stock");
+    XLSX.writeFile(workbook, `Resumen_Ejecutivo_Stock_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
 
   if (loading) return <div className="text-center p-12 text-slate-500 font-semibold tracking-wide">Cargando orígen de datos del sistema...</div>;
 
@@ -418,58 +441,49 @@ export default function StockDashboard({ initialData }: { initialData: ArticleDa
             
             <div className="p-4 md:p-6 overflow-y-auto flex-1 bg-slate-50/50">
               
-              <div className="mb-8">
-                <h3 className="text-red-700 font-bold text-sm uppercase tracking-widest mb-4 flex items-center gap-2 border-b border-red-200 pb-2">
-                  <span className="w-2 h-2 rounded-full bg-red-600"></span> Requerimientos de Compra
-                </h3>
-                {actionSummary.listComprar.length === 0 ? (
-                   <p className="text-sm text-slate-500 italic">No hay artículos con déficit crítico de stock final.</p>
-                ) : (
-                  <ul className="space-y-3">
-                    {actionSummary.listComprar.map((req, idx) => (
-                      <li key={idx} className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm flex items-start gap-3">
-                        <div className="w-1.5 h-full rounded-full bg-red-500 self-stretch shrink-0"></div>
-                        <div>
-                           <p className="font-bold text-slate-800 text-sm">{req.item.nombre}</p>
-                           <p className="text-xs text-red-600 font-medium mt-1">{req.action.warning}</p>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-
-              <div>
-                <h3 className="text-orange-600 font-bold text-sm uppercase tracking-widest mb-4 flex items-center gap-2 border-b border-orange-200 pb-2">
-                  <span className="w-2 h-2 rounded-full bg-orange-500"></span> Traslados Físicos Sugeridos
-                </h3>
-                {actionSummary.listDistribuir.length === 0 ? (
-                   <p className="text-sm text-slate-500 italic">No hay traslados o compensaciones físicas requeridas.</p>
-                ) : (
-                  <ul className="space-y-3">
-                    {actionSummary.listDistribuir.map((req, idx) => (
-                      <li key={idx} className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm flex items-start gap-3">
-                        <div className="w-1.5 h-full rounded-full bg-orange-400 self-stretch shrink-0"></div>
-                        <div className="flex-1 w-full">
-                           <p className="font-bold text-slate-800 text-sm flex justify-between">
-                              {req.item.nombre}
-                              <span className="text-[10px] text-slate-400 font-medium bg-slate-100 px-2 py-0.5 rounded">{req.item.rubro}</span>
-                           </p>
-                           <div className="text-xs text-slate-600 font-medium mt-2 space-y-1">
-                              {req.action.warning.split(" | ").map((s: string, subIdx: number) => (
-                                 <div key={subIdx} className="bg-orange-50 text-orange-800 px-3 py-1.5 rounded border border-orange-100 w-fit">📦 {s}</div>
-                              ))}
-                           </div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
+              {actionSummaryRows.length === 0 ? (
+                 <div className="flex flex-col items-center justify-center py-12 px-4 shadow-inner bg-white rounded-lg border border-slate-200">
+                    <ClipboardList className="w-12 h-12 text-slate-300 mb-3" />
+                    <p className="text-slate-500 font-medium">No hay acciones sugeridas (Compras o Traslados) en base al stock actual y pendiente.</p>
+                 </div>
+              ) : (
+                 <div className="overflow-x-auto bg-white rounded-lg border border-slate-200 shadow-sm custom-scrollbar">
+                    <table className="w-full text-sm text-left text-slate-600 font-medium">
+                       <thead className="text-xs text-slate-700 uppercase bg-slate-100 border-b border-slate-300 font-bold sticky top-0">
+                          <tr>
+                             <th className="px-4 py-3 border-r border-slate-200 w-1/3">Artículo</th>
+                             <th className="px-4 py-3 border-r border-slate-200 w-1/5">Rubro</th>
+                             <th className="px-4 py-3 border-r border-slate-200 text-center w-[120px]">Acción</th>
+                             <th className="px-4 py-3 border-r border-slate-200 text-center w-[100px]">Cantidad</th>
+                             <th className="px-4 py-3">Detalle</th>
+                          </tr>
+                       </thead>
+                       <tbody className="divide-y divide-slate-100">
+                          {actionSummaryRows.map((row, idx) => (
+                             <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                                <td className="px-4 py-2.5 border-r border-slate-100 text-slate-800 font-semibold">{row.articulo}</td>
+                                <td className="px-4 py-2.5 border-r border-slate-100 text-[11px] text-slate-500 font-bold uppercase tracking-wider">{row.rubro}</td>
+                                <td className="px-4 py-2.5 border-r border-slate-100 text-center">
+                                   <span className={`px-2 py-1 rounded text-[10px] uppercase font-bold ${row.tipo === 'COMPRAR' ? 'bg-red-100 text-red-700 border border-red-200' : 'bg-orange-100 text-orange-700 border border-orange-200'}`}>
+                                      {row.tipo}
+                                   </span>
+                                </td>
+                                <td className="px-4 py-2.5 border-r border-slate-100 text-center font-bold text-slate-800 text-base">{row.cantidad}</td>
+                                <td className="px-4 py-2.5 text-slate-600 text-xs">{row.detalle}</td>
+                             </tr>
+                          ))}
+                       </tbody>
+                    </table>
+                 </div>
+              )}
 
             </div>
             
-            <div className="p-4 border-t border-slate-200 bg-white flex justify-end">
+            <div className="p-4 border-t border-slate-200 bg-white flex justify-between">
+               <button onClick={handleExportSummary} disabled={actionSummaryRows.length === 0} className="flex items-center gap-2 bg-[#5c7025] hover:bg-[#4a5a1e] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-sm px-5 py-2 rounded-lg transition shadow-sm">
+                 <Download className="w-4 h-4" />
+                 Exportar a Excel
+               </button>
                <button onClick={() => setSummaryOpen(false)} className="bg-slate-800 text-white font-bold text-sm px-6 py-2 rounded-lg hover:bg-slate-700 transition shadow">
                  Cerrar
                </button>
